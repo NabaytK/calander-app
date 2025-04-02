@@ -1,24 +1,36 @@
-import React, { useState, useEffect } from 'react';
-import { Calendar, momentLocalizer } from 'react-big-calendar';
+'use client';
+
+import React, { useState } from 'react';
+import { Calendar, momentLocalizer, Views } from 'react-big-calendar';
 import moment from 'moment';
-import QRCode from 'qrcode.react';
+import 'react-big-calendar/lib/css/react-big-calendar.css';
 
 // Set up the localizer for react-big-calendar
 const localizer = momentLocalizer(moment);
 
-// Sample categories with colors - added FYSS
-const CATEGORIES = {
+// Sample categories with colors
+const CATEGORIES: Record<string, string> = {
   Academic: "#4285F4", // blue
   Financial: "#34A853", // green
   Events: "#FBBC05",    // yellow
   Athletics: "#EA4335", // red
   Deadlines: "#9C27B0", // purple
-  Holidays: "#FF9800",  // orange
-  FYSS: "#00796B"       // teal - First Year Student Services
+  Holidays: "#FF9800"   // orange
 };
 
-// Mock event data (would come from a backend/JSON file in production)
-const MOCK_EVENTS = [
+// Define event type
+interface CalendarEvent {
+  id: number;
+  title: string;
+  start: Date;
+  end: Date;
+  description: string;
+  location: string;
+  category: string;
+}
+
+// Mock event data
+const MOCK_EVENTS: CalendarEvent[] = [
   {
     id: 1,
     title: "Fall Semester Begins",
@@ -72,35 +84,13 @@ const MOCK_EVENTS = [
     description: "Showcase of student artwork from the Fall semester.",
     location: "McDonough Museum of Art",
     category: "Events"
-  },
-  {
-    id: 7,
-    title: "FYSS Orientation Session",
-    start: new Date(2025, 7, 15, 10, 0), // Aug 15, 2025
-    end: new Date(2025, 7, 15, 12, 0),
-    description: "First Year Student Services orientation session for new students.",
-    location: "Kilcawley Center",
-    category: "FYSS",
-    link: "https://ysu.edu/first-year-student-services",
-    linkLabel: "View Orientation Details"
-  },
-  {
-    id: 8,
-    title: "FYSS Study Skills Workshop",
-    start: new Date(2025, 8, 10, 14, 0), // Sep 10, 2025
-    end: new Date(2025, 8, 10, 15, 30),
-    description: "Learn essential study skills and time management for college success.",
-    location: "Maag Library, Room 103",
-    category: "FYSS",
-    link: "https://www.youtube.com/watch?v=example",
-    linkLabel: "Watch Preview Video"
   }
 ];
 
-const YSUCalendarApp = () => {
-  const [events, setEvents] = useState(MOCK_EVENTS);
-  const [selectedEvent, setSelectedEvent] = useState(null);
-  const [visibleCategories, setVisibleCategories] = useState(
+const YSUCalendarApp: React.FC = () => {
+  const [events] = useState<CalendarEvent[]>(MOCK_EVENTS);
+  const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
+  const [visibleCategories, setVisibleCategories] = useState<Record<string, boolean>>(
     Object.keys(CATEGORIES).reduce((acc, cat) => ({ ...acc, [cat]: true }), {})
   );
   const [searchQuery, setSearchQuery] = useState("");
@@ -116,14 +106,14 @@ const YSUCalendarApp = () => {
   );
 
   // Handle event click
-  const handleEventClick = (event) => {
+  const handleEventClick = (event: CalendarEvent) => {
     setSelectedEvent(event);
     setShowModal(true);
   };
 
   // Event style generator
-  const eventStyleGetter = (event) => {
-    const style = {
+  const eventStyleGetter = (event: CalendarEvent) => {
+    const style: React.CSSProperties = {
       backgroundColor: CATEGORIES[event.category],
       borderRadius: '4px',
       opacity: 0.9,
@@ -132,19 +122,13 @@ const YSUCalendarApp = () => {
       display: 'block',
       fontWeight: 'bold'
     };
-
-    // Make FYSS events stand out a bit
-    if (event.category === 'FYSS') {
-      style.border = '2px solid #004D40';
-    }
-
     return {
       style
     };
   };
 
   // Toggle category visibility
-  const toggleCategory = (category) => {
+  const toggleCategory = (category: string) => {
     setVisibleCategories(prev => ({
       ...prev,
       [category]: !prev[category]
@@ -152,7 +136,7 @@ const YSUCalendarApp = () => {
   };
 
   // Toggle all categories
-  const toggleAllCategories = (value) => {
+  const toggleAllCategories = (value: boolean) => {
     const newCategories = Object.keys(CATEGORIES).reduce(
       (acc, cat) => ({ ...acc, [cat]: value }), 
       {}
@@ -175,20 +159,10 @@ const YSUCalendarApp = () => {
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-100">
-      {/* Header with YSU FYSS logo */}
+      {/* Header */}
       <header className="bg-red-700 text-white p-4 shadow-md">
         <div className="container mx-auto flex flex-col md:flex-row justify-between items-center">
-          <div className="flex items-center">
-            {/* YSU FYSS Logo */}
-            <div className="mr-4 w-12 h-12 bg-white rounded-full flex items-center justify-center overflow-hidden">
-              <img 
-                src="https://ysu.edu/sites/default/files/YSULogo_Penguin2c.png" 
-                alt="YSU Logo" 
-                className="h-10 w-auto"
-              />
-            </div>
-            <h1 className="text-2xl font-bold">YSU First Year Student Services Calendar</h1>
-          </div>
+          <h1 className="text-2xl font-bold">YSU Calendar</h1>
           <div className="mt-3 md:mt-0 flex flex-col md:flex-row items-center space-y-2 md:space-y-0 md:space-x-4">
             <div className="relative">
               <input
@@ -274,7 +248,7 @@ const YSUCalendarApp = () => {
           <div className="space-y-2 max-h-64 overflow-y-auto">
             {filteredEvents
               .filter(event => event.start >= new Date())
-              .sort((a, b) => a.start - b.start)
+              .sort((a, b) => a.start.getTime() - b.start.getTime())
               .slice(0, 5)
               .map(event => (
                 <div 
@@ -301,7 +275,7 @@ const YSUCalendarApp = () => {
               style={{ height: 600 }}
               onSelectEvent={handleEventClick}
               eventPropGetter={eventStyleGetter}
-              views={['month', 'week', 'day', 'agenda']}
+              views={[Views.MONTH, Views.WEEK, Views.DAY, Views.AGENDA]}
               popup
             />
           </div>
@@ -351,21 +325,6 @@ const YSUCalendarApp = () => {
                 <div className="text-gray-500 text-sm">Description</div>
                 <p>{selectedEvent.description}</p>
               </div>
-              
-              {/* Display link if available */}
-              {selectedEvent.link && (
-                <div>
-                  <div className="text-gray-500 text-sm">Resource</div>
-                  
-                    href={selectedEvent.link}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-blue-600 hover:underline"
-                  >
-                    {selectedEvent.linkLabel || 'View Resource'}
-                  </a>
-                </div>
-              )}
             </div>
             
             <div className="mt-6 flex justify-end">
@@ -402,10 +361,6 @@ const YSUCalendarApp = () => {
               <p className="mb-4">Subscribe to the YSU Calendar to keep up with important dates and events. Add this calendar to your favorite calendar app to receive automatic updates.</p>
               
               <div className="bg-gray-100 p-4 rounded-lg text-center">
-                <div className="mb-4 flex justify-center">
-                  <QRCode value={getSubscriptionLink()} size={150} />
-                </div>
-                
                 <div className="text-sm font-medium mb-2">Calendar URL:</div>
                 <input
                   type="text"
