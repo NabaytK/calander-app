@@ -1,1 +1,0 @@
-self.__REACT_LOADABLE_MANIFEST="{\"components/YSUCalendarApp.tsx -> qrcode.react\":{\"id\":\"components/YSUCalendarApp.tsx -> qrcode.react\",\"files\":[\"static/chunks/_app-pages-browser_node_modules_qrcode_react_lib_esm_index_js.js\"]}}"
