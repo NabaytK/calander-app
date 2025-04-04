@@ -1,0 +1,4 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <circle cx="50" cy="50" r="45" fill="white" stroke="#C41230" stroke-width="2"/>
+  <text x="50" y="60" font-family="Arial" font-size="24" text-anchor="middle" fill="#C41230">YSU</text>
+</svg>

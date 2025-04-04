@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Calendar, momentLocalizer } from 'react-big-calendar';
 import moment from 'moment';
 import QRCode from 'qrcode.react';
+import 'react-big-calendar/lib/css/react-big-calendar.css';
 
 // Set up the localizer for react-big-calendar
 const localizer = momentLocalizer(moment);
@@ -17,8 +18,25 @@ const CATEGORIES = {
   FYSS: "#00796B"       // teal - First Year Student Services
 };
 
+// Define TypeScript interfaces
+interface CalendarEvent {
+  id: number;
+  title: string;
+  start: Date;
+  end: Date;
+  description: string;
+  location: string;
+  category: string;
+  link?: string;
+  linkLabel?: string;
+}
+
+interface CategoryVisibility {
+  [key: string]: boolean;
+}
+
 // Mock event data (would come from a backend/JSON file in production)
-const MOCK_EVENTS = [
+const MOCK_EVENTS: CalendarEvent[] = [
   {
     id: 1,
     title: "Fall Semester Begins",
@@ -97,10 +115,10 @@ const MOCK_EVENTS = [
   }
 ];
 
-const YSUCalendarApp = () => {
-  const [events, setEvents] = useState(MOCK_EVENTS);
-  const [selectedEvent, setSelectedEvent] = useState(null);
-  const [visibleCategories, setVisibleCategories] = useState(
+const YSUCalendarApp: React.FC = () => {
+  const [events] = useState<CalendarEvent[]>(MOCK_EVENTS);
+  const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
+  const [visibleCategories, setVisibleCategories] = useState<CategoryVisibility>(
     Object.keys(CATEGORIES).reduce((acc, cat) => ({ ...acc, [cat]: true }), {})
   );
   const [searchQuery, setSearchQuery] = useState("");
@@ -116,15 +134,15 @@ const YSUCalendarApp = () => {
   );
 
   // Handle event click
-  const handleEventClick = (event) => {
+  const handleEventClick = (event: CalendarEvent) => {
     setSelectedEvent(event);
     setShowModal(true);
   };
 
-  // Event style generator
-  const eventStyleGetter = (event) => {
+  // Event style getter
+  const eventStyleGetter = (event: CalendarEvent) => {
     const style = {
-      backgroundColor: CATEGORIES[event.category],
+      backgroundColor: CATEGORIES[event.category as keyof typeof CATEGORIES],
       borderRadius: '4px',
       opacity: 0.9,
       color: 'white',
@@ -144,7 +162,7 @@ const YSUCalendarApp = () => {
   };
 
   // Toggle category visibility
-  const toggleCategory = (category) => {
+  const toggleCategory = (category: string) => {
     setVisibleCategories(prev => ({
       ...prev,
       [category]: !prev[category]
@@ -152,18 +170,16 @@ const YSUCalendarApp = () => {
   };
 
   // Toggle all categories
-  const toggleAllCategories = (value) => {
+  const toggleAllCategories = (value: boolean) => {
     const newCategories = Object.keys(CATEGORIES).reduce(
       (acc, cat) => ({ ...acc, [cat]: value }), 
-      {}
+      {} as CategoryVisibility
     );
     setVisibleCategories(newCategories);
   };
 
   // Create and trigger ICS download
   const downloadICS = () => {
-    // In a real app, this would call an API endpoint that generates the ICS file
-    // For this demo, we'll just show how this would redirect
     alert("In a real implementation, this would download an ICS file with all selected events.\n\nThe backend would generate this file using ics.js or similar.");
   };
 
@@ -182,7 +198,7 @@ const YSUCalendarApp = () => {
             {/* YSU FYSS Logo */}
             <div className="mr-4 w-12 h-12 bg-white rounded-full flex items-center justify-center overflow-hidden">
               <img 
-                src="https://ysu.edu/sites/default/files/YSULogo_Penguin2c.png" 
+                src="/api/placeholder/400/400" 
                 alt="YSU Logo" 
                 className="h-10 w-auto"
               />
@@ -274,13 +290,13 @@ const YSUCalendarApp = () => {
           <div className="space-y-2 max-h-64 overflow-y-auto">
             {filteredEvents
               .filter(event => event.start >= new Date())
-              .sort((a, b) => a.start - b.start)
+              .sort((a, b) => a.start.getTime() - b.start.getTime())
               .slice(0, 5)
               .map(event => (
                 <div 
                   key={event.id} 
                   className="p-2 border-l-4 text-sm cursor-pointer hover:bg-gray-50"
-                  style={{ borderColor: CATEGORIES[event.category] }}
+                  style={{ borderColor: CATEGORIES[event.category as keyof typeof CATEGORIES] }}
                   onClick={() => handleEventClick(event)}
                 >
                   <div className="font-medium">{event.title}</div>
@@ -299,8 +315,8 @@ const YSUCalendarApp = () => {
               startAccessor="start"
               endAccessor="end"
               style={{ height: 600 }}
-              onSelectEvent={handleEventClick}
-              eventPropGetter={eventStyleGetter}
+              onSelectEvent={(event) => handleEventClick(event as CalendarEvent)}
+              eventPropGetter={(event) => eventStyleGetter(event as CalendarEvent)}
               views={['month', 'week', 'day', 'agenda']}
               popup
             />
@@ -326,7 +342,7 @@ const YSUCalendarApp = () => {
               <div>
                 <span 
                   className="inline-block px-2 py-1 text-xs font-medium text-white rounded"
-                  style={{ backgroundColor: CATEGORIES[selectedEvent.category] }}
+                  style={{ backgroundColor: CATEGORIES[selectedEvent.category as keyof typeof CATEGORIES] }}
                 >
                   {selectedEvent.category}
                 </span>
@@ -355,13 +371,17 @@ const YSUCalendarApp = () => {
               {/* Display link if available */}
               {selectedEvent.link && (
                 <div>
-                  <div className="text-gray-500 text-sm">Resource</div>
-                  
-                    href={selectedEvent.link}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-blue-600 hover:underline"
-                  >
+                <div className="text-gray-500 text-sm">Resource</div>
+                <a
+                  href={selectedEvent.link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-600 hover:underline"
+                >
+                  {selectedEvent.linkLabel || 'View Resource'}
+                </a>
+              </div>
+              
                     {selectedEvent.linkLabel || 'View Resource'}
                   </a>
                 </div>
@@ -405,7 +425,7 @@ const YSUCalendarApp = () => {
                 <div className="mb-4 flex justify-center">
                   <QRCode value={getSubscriptionLink()} size={150} />
                 </div>
-                
+      };
                 <div className="text-sm font-medium mb-2">Calendar URL:</div>
                 <input
                   type="text"
@@ -431,7 +451,7 @@ const YSUCalendarApp = () => {
                 
                 <div>
                   <h4 className="font-medium">Google Calendar:</h4>
-                  <ol className="text-sm ml-5 list-decimal space-y-1">
+                  <li>In Calendar, select File &gt; New Calendar Subscription</li>
                     <li>In Google Calendar, click the "+" next to "Other calendars"</li>
                     <li>Select "From URL"</li>
                     <li>Paste the URL above and click "Add calendar"</li>

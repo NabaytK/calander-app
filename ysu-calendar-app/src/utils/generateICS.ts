@@ -1,6 +1,6 @@
-import { writeFileSync } from 'fs';
-import { join } from 'path';
 import * as ics from 'ics';
+import fs from 'fs';
+import path from 'path';
 
 // Event interface
 interface CalendarEvent {
@@ -11,83 +11,34 @@ interface CalendarEvent {
   description: string;
   location: string;
   category: string;
+  link?: string;
 }
-
-// Sample events data structure (in production, this would come from a database or JSON file)
-const events: CalendarEvent[] = [
-  {
-    id: 1,
-    title: "Fall Semester Begins",
-    start: [2025, 8, 21, 8, 0], // Format: [year, month, day, hour, minute]
-    end: [2025, 8, 21, 17, 0],
-    description: "First day of Fall semester classes.",
-    location: "YSU Campus",
-    category: "Academic"
-  },
-  {
-    id: 2,
-    title: "Tuition Due",
-    start: [2025, 9, 5, 0, 0],
-    end: [2025, 9, 5, 23, 59],
-    description: "Last day to pay Fall tuition.",
-    location: "YSU Office of Student Accounts",
-    category: "Financial"
-  },
-  {
-    id: 3,
-    title: "Homecoming Game",
-    start: [2025, 10, 12, 14, 0],
-    end: [2025, 10, 12, 17, 0],
-    description: "Annual YSU Homecoming football game.",
-    location: "Stambaugh Stadium",
-    category: "Athletics"
-  },
-  {
-    id: 4,
-    title: "Registration Deadline",
-    start: [2025, 11, 10, 0, 0],
-    end: [2025, 11, 10, 23, 59],
-    description: "Last day to register for Spring classes.",
-    location: "Online",
-    category: "Deadlines"
-  },
-  {
-    id: 5,
-    title: "Fall Break",
-    start: [2025, 11, 25, 0, 0],
-    end: [2025, 11, 29, 23, 59],
-    description: "No classes for Fall break.",
-    location: "YSU Campus",
-    category: "Holidays"
-  },
-  {
-    id: 6,
-    title: "Student Art Exhibition",
-    start: [2025, 10, 5, 18, 0],
-    end: [2025, 10, 5, 21, 0],
-    description: "Showcase of student artwork from the Fall semester.",
-    location: "McDonough Museum of Art",
-    category: "Events"
-  }
-];
 
 // Transform events to ICS format
 function transformToICSEvents(events: CalendarEvent[]) {
-  return events.map(event => ({
-    uid: `${event.id}@ysu-calendar.example.com`,
-    title: event.title,
-    start: event.start,
-    end: event.end,
-    description: event.description,
-    location: event.location,
-    categories: [event.category],
-    status: 'CONFIRMED',
-    busyStatus: 'BUSY'
-  }));
+  return events.map(event => {
+    // Create description that includes link if available
+    let description = event.description || '';
+    if (event.link) {
+      description += `\n\nResource: ${event.link}`;
+    }
+    
+    return {
+      uid: `${event.id}@ysu-calendar.example.com`,
+      title: event.title,
+      start: event.start,
+      end: event.end,
+      description: description,
+      location: event.location,
+      categories: [event.category],
+      status: 'CONFIRMED',
+      busyStatus: 'BUSY'
+    };
+  });
 }
 
 // Generate ICS for all events
-export function generateMainCalendar() {
+export function generateMainCalendar(events: CalendarEvent[], outputDir: string) {
   const icsEvents = transformToICSEvents(events);
   
   ics.createEvents(icsEvents, (error, value) => {
@@ -96,18 +47,15 @@ export function generateMainCalendar() {
       return;
     }
     
-    // Write to file - note: this won't work in browser environment
-    // This code is meant for backend/API routes
-    // const outputPath = join(process.cwd(), 'public', 'ysu-calendar.ics');
-    // writeFileSync(outputPath, value);
-    console.log(`Main calendar generated`);
-    
-    return value;
+    // Write to file
+    const outputPath = path.join(outputDir, 'ysu-calendar.ics');
+    fs.writeFileSync(outputPath, value);
+    console.log(`Main calendar generated at ${outputPath}`);
   });
 }
 
 // Generate ICS per category
-export function generateCategoryCalendars() {
+export function generateCategoryCalendars(events: CalendarEvent[], outputDir: string) {
   // Get unique categories
   const categories = [...new Set(events.map(event => event.category))];
   
@@ -121,18 +69,13 @@ export function generateCategoryCalendars() {
         return;
       }
       
-      // Write to file - note: this won't work in browser environment
-      // This code is meant for backend/API routes
-      // const outputPath = join(process.cwd(), 'public', `ysu-${category.toLowerCase()}.ics`);
-      // writeFileSync(outputPath, value);
-      console.log(`${category} calendar generated`);
-      
-      return value;
+      // Write to file
+      const outputPath = path.join(outputDir, `ysu-${category.toLowerCase()}.ics`);
+      fs.writeFileSync(outputPath, value);
+      console.log(`${category} calendar generated at ${outputPath}`);
     });
   });
 }
 
 // Export functions for use in API routes
-export {
-  transformToICSEvents
-};
+export { transformToICSEvents };
