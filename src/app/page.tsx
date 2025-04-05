@@ -1,15 +1,12 @@
-import dynamic from 'next/dynamic';
+'use client';
 
-// Dynamically import to ensure client-side rendering
-const YSUCalendarApp = dynamic(() => import('@/components/YSUCalendarApp'), { 
-  ssr: false,
-  loading: () => <div>Loading Calendar...</div>
-});
+import React from 'react';
+import YSUCalendarApp from '@/components/YSUCalendarApp';
 
 export default function Home() {
   return (
-    <main>
+    <div className="min-h-screen">
       <YSUCalendarApp />
-    </main>
+    </div>
   );
 }
